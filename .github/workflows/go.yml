@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build_publish:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ashurmatovlochinbek/app:latest
+
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Clean up old containers and images
+        run: |
+            # Stop and remove old container if it exists
+            if [ "$(docker ps -q -f name=app)" ]; then
+              docker stop app
+              docker rm app
+            fi
+            if [ "$(docker ps -a -q -f name=app)" ]; then
+              docker rm app
+            fi
+            
+            # Remove old image if it exists
+            if [ "$(docker images -q ashurmatovlochinbek/app:latest)" ]; then
+              docker rmi ashurmatovlochinbek/app:latest
+            fi
+      - name: Pull docker image
+        run: docker pull ashurmatovlochinbek/app:latest
+      - name: Run Docker container
+        run: docker run -d --name app -p 8080:8080 ashurmatovlochinbek/app:latest
