@@ -16,5 +16,8 @@ func main() {
 	r.Get("/new", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("new one"))
 	})
+	r.Get("/add", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("add one"))
+	})
 	http.ListenAndServe(":8080", r)
 }
